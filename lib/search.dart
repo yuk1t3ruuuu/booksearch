@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:firebase_core/firebase_core.dart';
 
-
-import 'firebase_options.dart';
 import 'package:booksearch/provider.dart';
 import 'model.dart';
-
 
 
 TextEditingController keywordEditing = TextEditingController();
@@ -17,7 +13,6 @@ class SearchPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
 
-    final books = ref.watch(booksStreamProvider); //使わなかったら削除する
     final genres = ref.watch(genreProvider);
 
 
@@ -70,7 +65,10 @@ class SearchPage extends ConsumerWidget {
                     border: OutlineInputBorder(),
                     labelText: "キーワード"
                 ),
-                onEditingComplete: (){},
+                onChanged: (String? value){
+                  ref.read(textProvider.notifier).state = value!;
+                },
+
               )
             )
           ],

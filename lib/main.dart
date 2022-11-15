@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_core/firebase_core.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'firebase_options.dart';
 import 'package:booksearch/provider.dart';
 import 'package:booksearch/search.dart';
+import 'package:booksearch/model.dart';
+
+TextEditingController keywordEditing = TextEditingController();
+
+final CollectionReference<Book> bookRef = FirebaseFirestore.instance
+    .collection('books')
+    .withConverter<Book>(
+  fromFirestore: (snapshots, _) => Book.fromJson(snapshots.data()!),
+  toFirestore: (todo, _) => todo.toJson(),
+);
 
 
 void main() async{
@@ -40,6 +50,9 @@ class BookPage extends ConsumerWidget{
   Widget build(BuildContext context, WidgetRef ref){
 
     final books = ref.watch(booksStreamProvider);
+    final keywords = ref.watch(textProvider);
+    List<Book> bookList = [];
+    List<Book> choicedList = [];
 
     return Scaffold(
       appBar: AppBar(
@@ -53,20 +66,57 @@ class BookPage extends ConsumerWidget{
               error: (error, stack) => Text('Error: $error'),
               loading: () => const CircularProgressIndicator() ,
               data: (books){
-                return Expanded(
-                    child: ListView.builder(
-                             itemCount: books.size,
-                             itemBuilder: (context, index){
-                             final book = books.docs[index].data();
-                             return Card(
-                               child: ListTile(
-                               title: Text(book.title + ' - ' + book.author, style: TextStyle(fontWeight: FontWeight.bold)),
-                               subtitle: Text(book.description),
-                               ),
-                             );
-                             }
-                    )
-                );
+             if (keywords.isEmpty) {
+               return Expanded(
+                   child: ListView.builder(         //キーワード指定がない場合
+                       itemCount: books.size,
+                       itemBuilder: (context, index){
+                         final book = books.docs[index].data();
+                         return Card(
+                           child: ListTile(
+                             title: Text(book.title + ' - ' + book.author, style: TextStyle(fontWeight: FontWeight.bold)),
+                             subtitle: Text(book.description),
+                           ),
+                         );
+                       }
+                   )
+               );
+             }
+             else{
+               bookList = books.docs.map((doc) => doc.data()).toList();
+               choicedList = bookList.where((doc) => (doc.description.contains(keywords)) || (doc.title.contains(keywords))).toList();
+
+               return Expanded(
+                   child: ListView.builder(
+                       itemCount: choicedList.length,
+                       itemBuilder: (context, index){
+                         return Card(
+                           child: ListTile(
+                             title: Text(choicedList[index].title + ' - ' + choicedList[index].author, style: TextStyle(fontWeight: FontWeight.bold)),
+                             subtitle: Text(choicedList[index].description),
+                           ),
+                         );
+                       }
+                   )
+               );
+             }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
               },
           )
         ],
